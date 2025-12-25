@@ -57,7 +57,7 @@ async function run() {
     // In your Express backend (server.js or index.js)
 
     // Get a user by uid
-    app.get("/api/users/:uid", async (req, res) => {
+    app.get("/api/users/:uid",verifyFBtoken, async (req, res) => {
       const { uid } = req.params;
       try {
 
@@ -71,7 +71,7 @@ async function run() {
     });
 
     /* -------- Create Content (Artist) -------- */
-    app.post("/api/content", async (req, res) => {
+    app.post("/api/content",verifyFBtoken, async (req, res) => {
       try {
         const content = req.body;
         if (!content.title || !content.artistId) {
@@ -87,7 +87,7 @@ async function run() {
     });
 
 
-    app.get('/api/content', async (req, res) => {
+    app.get('/api/content',verifyFBtoken, async (req, res) => {
       try {
 
         // your collection name
@@ -99,7 +99,7 @@ async function run() {
       }
     });
     // Update status
-    app.patch('/api/content/:id/status', async (req, res) => {
+    app.patch('/api/content/:id/status',verifyFBtoken, async (req, res) => {
       const { id } = req.params;
       const { status } = req.body;
       try {
@@ -118,7 +118,7 @@ async function run() {
 
     // Update metrics
     // Update metrics
-    app.patch('/api/content/:id/metrics', async (req, res) => {
+    app.patch('/api/content/:id/metrics',verifyFBtoken, async (req, res) => {
       const { id } = req.params;
       const { platform, views, revenue } = req.body;
 
@@ -138,7 +138,7 @@ async function run() {
 
 
     //edit content
-    app.patch("/api/content/:id", async (req, res) => {
+    app.patch("/api/content/:id",verifyFBtoken, async (req, res) => {
       const { id } = req.params;
       const { title, description } = req.body;
 
