@@ -7,6 +7,10 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 const port = process.env.PORT || 3000
 
+// const serviceAccount = require("./firebase-admin-key.json");
+
+
+
 //middleware
 app.use(express.json())
 app.use(cors())
@@ -27,7 +31,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    //await client.connect();
     const database = client.db('artistdb')
     const usersCollection = database.collection("users");
     const contentsCollection = database.collection("contents");
@@ -57,7 +61,7 @@ async function run() {
     // In your Express backend (server.js or index.js)
 
     // Get a user by uid
-    app.get("/api/users/:uid",verifyFBtoken, async (req, res) => {
+    app.get("/api/users/:uid", verifyFBtoken, async (req, res) => {
       const { uid } = req.params;
       try {
 
@@ -71,7 +75,7 @@ async function run() {
     });
 
     /* -------- Create Content (Artist) -------- */
-    app.post("/api/content",verifyFBtoken, async (req, res) => {
+    app.post("/api/content", verifyFBtoken, async (req, res) => {
       try {
         const content = req.body;
         if (!content.title || !content.artistId) {
@@ -86,20 +90,37 @@ async function run() {
       }
     });
 
-
-    app.get('/api/content',verifyFBtoken, async (req, res) => {
+    // ==============================
+    app.get("/api/content", verifyFBtoken, async (req, res) => {
       try {
+        const artistId = req.query.artistId;
+        const requesterUid = req.user.uid; // <- use req.user, not req.decoded
 
-        // your collection name
-        const contents = await contentsCollection.find({}).toArray();
+        let query = {};
+
+        if (artistId) {
+          // Artist can only request their own content
+          if (artistId !== requesterUid) {
+            return res.status(403).json({ message: "Forbidden" });
+          }
+          query.artistId = artistId;
+        }
+
+        // Admin can see everything
+        const user = await usersCollection.findOne({ uid: requesterUid });
+        if (user.role === "admin") query = {};
+
+        const contents = await contentsCollection.find(query).toArray();
         res.json(contents);
       } catch (err) {
         console.error(err);
-        res.status(500).json({ message: 'Failed to fetch contents' });
+        res.status(500).json({ message: "Failed to fetch contents" });
       }
     });
+
+
     // Update status
-    app.patch('/api/content/:id/status',verifyFBtoken, async (req, res) => {
+    app.patch('/api/content/:id/status', verifyFBtoken, async (req, res) => {
       const { id } = req.params;
       const { status } = req.body;
       try {
@@ -118,7 +139,7 @@ async function run() {
 
     // Update metrics
     // Update metrics
-    app.patch('/api/content/:id/metrics',verifyFBtoken, async (req, res) => {
+    app.patch('/api/content/:id/metrics', verifyFBtoken, async (req, res) => {
       const { id } = req.params;
       const { platform, views, revenue } = req.body;
 
@@ -138,7 +159,7 @@ async function run() {
 
 
     //edit content
-    app.patch("/api/content/:id",verifyFBtoken, async (req, res) => {
+    app.patch("/api/content/:id", verifyFBtoken, async (req, res) => {
       const { id } = req.params;
       const { title, description } = req.body;
 
@@ -157,8 +178,8 @@ async function run() {
 
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    //await client.db("admin").command({ ping: 1 });
+    //   console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
     //await client.close();
